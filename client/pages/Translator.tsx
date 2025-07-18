@@ -232,10 +232,9 @@ export default function Translator() {
       speechSynthesis.speak(utterance);
     } catch (speakError) {
       console.error("Error during speech synthesis:", {
-        error: speakError,
-        message: speakError?.message || "Unknown error",
-        name: speakError?.name || "Unknown",
-        stack: speakError?.stack || "No stack",
+        message: String(speakError?.message || "Unknown error"),
+        name: String(speakError?.name || "Unknown"),
+        stack: String(speakError?.stack || "No stack"),
       });
       setIsSpeaking(false);
 
@@ -726,7 +725,7 @@ export default function Translator() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   "Hello, how are you?",
-                  "నమస్క��రం, ఎలా ఉన్నారు?",
+                  "నమస్క��రం, ఎలా ఉన్నార��?",
                   "Where is the bathroom?",
                   "I need help, please.",
                   "Thank you very much.",
