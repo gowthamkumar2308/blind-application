@@ -146,20 +146,30 @@ export default function Translator() {
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = (error) => {
-        console.error("Speech synthesis error:", {
-          fullError: JSON.stringify(error, null, 2),
-          type: error?.type || "unknown",
-          error: error?.error || "unknown",
-          name: error?.name || "unknown",
-          message: error?.message || "unknown",
-          toString: error?.toString?.() || "no toString",
-          errorEvent: error,
-        });
+        // Safe error logging without circular references or object conversion issues
+        const safeErrorInfo = {
+          type: String(error?.type || "unknown"),
+          error: String(error?.error || "unknown"),
+          name: String(error?.name || "unknown"),
+          message: String(error?.message || "unknown"),
+          constructor: error?.constructor?.name || "unknown",
+        };
+
+        console.error("Speech synthesis error:", safeErrorInfo);
+
+        // Log the raw error separately (this might work better in some browsers)
+        try {
+          console.error("Raw error:", error);
+        } catch (logError) {
+          console.error("Could not log raw error object");
+        }
+
         setIsSpeaking(false);
 
         // Handle different error scenarios more safely
-        const errorType =
-          error?.error || error?.type || error?.name || "unknown";
+        const errorType = String(
+          error?.error || error?.type || error?.name || "unknown",
+        );
         console.log("Determined error type:", errorType);
 
         // Don't create recursive calls - check if we're already trying English
@@ -329,7 +339,7 @@ export default function Translator() {
             hi: "హాయ్",
             "good morning": "శుభోదయం",
             "good evening": "శుభ సాయంత్రం",
-            "good night": "శుభ రాత్రి",
+            "good night": "శ���భ రాత్రి",
             "how are you": "ఎలా ఉన్నారు",
             "thank you": "ధన్యవాదాలు",
             please: "దయచేసి",
