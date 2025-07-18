@@ -29,7 +29,7 @@ import {
 
 const languages = [
   { code: "en-US", name: "English (US)", flag: "🇺🇸" },
-  { code: "te-IN", name: "Telugu (తెలుగ)", flag: "🇮🇳" },
+  { code: "te-IN", name: "Telugu (తెలుగు)", flag: "🇮🇳" },
   { code: "hi-IN", name: "Hindi", flag: "🇮🇳" },
   { code: "es-ES", name: "Spanish", flag: "🇪🇸" },
   { code: "fr-FR", name: "French", flag: "🇫🇷" },
@@ -49,346 +49,102 @@ export default function Translator() {
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [availableVoices, setAvailableVoices] = useState<
-    SpeechSynthesisVoice[]
-  >([]);
-  const [teluguVoiceAvailable, setTeluguVoiceAvailable] = useState(false);
 
-  const speak = (text: string, languageCode?: string) => {
-    // Ultra-basic safety checks
+  // Ultra-simple speech synthesis that just works
+  const speak = (text: string, lang: string = "en-US") => {
     if (!text || !text.trim()) {
-      console.log("Empty text provided to speech synthesis");
+      console.log("No text to speak");
       return;
     }
 
     if (!("speechSynthesis" in window)) {
-      console.log("Speech synthesis not available in this browser");
+      console.log("Speech synthesis not supported");
       return;
     }
 
-    // Start with the simplest approach first
-    console.log("Starting speech synthesis:", {
-      textLength: text.length,
-      language: languageCode,
-    });
-
-    // Cancel any ongoing speech safely
     try {
-      if (speechSynthesis.speaking || speechSynthesis.pending) {
-        speechSynthesis.cancel();
-        // Wait a moment after cancel
-        setTimeout(() => attemptSpeech(text, languageCode), 300);
-        return;
-      }
-    } catch (e) {
-      console.log("Error checking speech status, proceeding anyway");
-    }
+      // Stop any current speech
+      speechSynthesis.cancel();
 
-    attemptSpeech(text, languageCode);
-  };
-
-  const attemptSpeech = (text: string, languageCode?: string) => {
-    // Try the simplest possible speech synthesis first
-    try {
-      console.log("Attempting simple speech synthesis");
-      const utterance = new SpeechSynthesisUtterance(text);
-
-      // Set basic properties only
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      // Only set language if it's provided and safe
-      if (languageCode && typeof languageCode === "string") {
-        utterance.lang = languageCode;
-      }
-
-      // Minimal event handlers
-      utterance.onstart = () => {
-        console.log("Speech started successfully");
-        setIsSpeaking(true);
-      };
-
-      utterance.onend = () => {
-        console.log("Speech ended");
-        setIsSpeaking(false);
-      };
-
-      utterance.onerror = () => {
-        console.log("Simple speech failed, trying enhanced approach");
-        setIsSpeaking(false);
-        // Try enhanced approach only if simple fails
-        tryEnhancedSpeech(text, languageCode);
-      };
-
-      console.log("Speaking with simple synthesis");
-      speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.log("Simple speech creation failed, trying enhanced");
-      tryEnhancedSpeech(text, languageCode);
-    }
-  };
-
-  const tryEnhancedSpeech = (text: string, languageCode?: string) => {
-    console.log("Trying enhanced speech with voice selection");
-
-    // Get voices with error handling
-    let voices = [];
-    try {
-      voices = speechSynthesis.getVoices();
-      console.log("Available voices:", voices.length);
-    } catch (e) {
-      console.log("Could not get voices, using basic synthesis");
-      useBackupSpeech(text, languageCode);
-      return;
-    }
-
-    if (voices.length === 0) {
-      console.log("No voices available, using backup");
-      useBackupSpeech(text, languageCode);
-      return;
-    }
-
-    // Try to perform enhanced speech with voice selection
-    performSpeech(text, languageCode, voices);
-  };
-
-  const useBackupSpeech = (text: string, languageCode?: string) => {
-    try {
-      console.log("Using backup speech synthesis");
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = languageCode || "en-US";
-      utterance.rate = 0.8;
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => {
-        console.log("Backup speech also failed, giving up");
-        setIsSpeaking(false);
-      };
-
-      speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.log("Backup speech failed completely");
-      setIsSpeaking(false);
-    }
-  };
-
-    const performSpeech = (
-    text: string,
-    languageCode: string | undefined,
-    voices: SpeechSynthesisVoice[],
-  ) => {
-    try {
-      console.log('Starting enhanced speech synthesis');
-      const targetLang = languageCode || selectedLanguage || 'en-US';
-      const utterance = new SpeechSynthesisUtterance(text);
-
-            // Safely find the best voice for the target language
-      let selectedVoice = null;
-
-      try {
-        if (targetLang === "te-IN" || targetLang.startsWith("te")) {
-        // Look for Telugu voices
-        selectedVoice = voices.find(
-          (voice) =>
-            voice.lang.startsWith("te") ||
-            voice.lang.includes("telugu") ||
-            voice.name.toLowerCase().includes("telugu"),
-        );
-
-        if (!selectedVoice) {
-          // Fallback to Hindi if Telugu not available
-          selectedVoice = voices.find((voice) => voice.lang.startsWith("hi"));
-
-          if (!selectedVoice) {
-            // Final fallback to English with a note
-            selectedVoice = voices.find((voice) => voice.lang.startsWith("en"));
-            console.log("Telugu voice not available, using fallback");
-          }
-        }
-      } else {
-        // For other languages, find matching voice
-        selectedVoice = voices.find((voice) =>
-          voice.lang.startsWith(targetLang.split("-")[0]),
-        );
-      }
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log(
-          `Using voice: ${selectedVoice.name} for language: ${targetLang}`,
-        );
-      }
-
-      utterance.lang = targetLang;
-      utterance.rate = targetLang === "te-IN" ? 0.7 : 0.8; // Slower for Telugu
-      utterance.pitch = 1;
-      utterance.volume = 1;
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = (error) => {
-        // Ultra-safe error handling - completely avoid object conversion
-        console.error("Speech synthesis error occurred");
-
-        // Extract properties one by one safely
+      // Wait a moment then start new speech
+      setTimeout(() => {
         try {
-          if (error) {
-            if (error.type !== undefined)
-              console.log("Error type:", error.type);
-            if (error.error !== undefined)
-              console.log("Error code:", error.error);
-            if (error.message !== undefined)
-              console.log("Error message:", error.message);
-          }
-        } catch (e) {
-          console.log("Could not extract error details safely");
-        }
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = lang;
+          utterance.rate = lang === "te-IN" ? 0.7 : 0.8;
+          utterance.pitch = 1;
+          utterance.volume = 1;
 
-        setIsSpeaking(false);
+          utterance.onstart = () => {
+            console.log("Speech started");
+            setIsSpeaking(true);
+          };
 
-        // Simple fallback logic without complex object access
-        let shouldFallback = true; // Default to always try fallback
-        console.log("Will attempt fallback for language:", targetLang);
+          utterance.onend = () => {
+            console.log("Speech ended");
+            setIsSpeaking(false);
+          };
 
-        // Use simple backup speech for fallback
-        if (targetLang !== "en-US" && !text.includes("voice not available")) {
-          console.log("Attempting backup speech fallback");
-          setTimeout(() => {
-            const fallbackText =
-              targetLang === "te-IN"
-                ? `Telugu voice not available. The text was: ${text.substring(0, 50)}...`
-                : `Voice not available for this language. The text was: ${text.substring(0, 50)}...`;
-            useBackupSpeech(fallbackText, "en-US");
-          }, 500);
-        } else {
-          // Try backup speech with original text
-          console.log("Using backup speech for original text");
-          setTimeout(() => {
-            useBackupSpeech(text, "en-US");
-          }, 500);
-        }
-      };
+          utterance.onerror = () => {
+            console.log("Speech error - trying English fallback");
+            setIsSpeaking(false);
 
-      // Additional check before speaking
-      if (speechSynthesis.speaking || speechSynthesis.pending) {
-        console.log("Still speaking/pending, waiting...");
-        setTimeout(() => performSpeech(text, languageCode, voices), 500);
-        return;
-      }
+            // If not already English, try English fallback
+            if (lang !== "en-US") {
+              setTimeout(() => {
+                speak(
+                  `Language not supported. Original text: ${text.substring(0, 50)}...`,
+                  "en-US",
+                );
+              }, 500);
+            }
+          };
 
-      console.log("Attempting to speak:", {
-        text: text.substring(0, 50),
-        targetLang,
-        voiceSelected: !!selectedVoice,
-      });
-      speechSynthesis.speak(utterance);
-    } catch (speakError) {
-      console.error("Error during speech synthesis:", {
-        message: String(speakError?.message || "Unknown error"),
-        name: String(speakError?.name || "Unknown"),
-        stack: String(speakError?.stack || "No stack"),
-      });
-      setIsSpeaking(false);
-
-      // Final fallback - try simple English fallback
-      try {
-        const simpleUtterance = new SpeechSynthesisUtterance(
-          `Speech failed for: ${text.substring(0, 30)}`,
-        );
-        simpleUtterance.lang = "en-US";
-        simpleUtterance.onend = () => setIsSpeaking(false);
-        simpleUtterance.onerror = () => {
-          console.log("Even fallback speech failed, giving up");
+          console.log("Starting speech:", { lang, textLength: text.length });
+          speechSynthesis.speak(utterance);
+        } catch (error) {
+          console.log("Speech creation failed");
           setIsSpeaking(false);
-        };
-        speechSynthesis.speak(simpleUtterance);
-      } catch (fallbackError) {
-        console.error("Fallback speech also failed:", fallbackError);
-        setIsSpeaking(false);
-      }
+        }
+      }, 100);
+    } catch (error) {
+      console.log("Speech setup failed");
+      setIsSpeaking(false);
     }
   };
 
   const stopSpeaking = () => {
-    speechSynthesis.cancel();
-    setIsSpeaking(false);
+    try {
+      speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } catch (error) {
+      console.log("Error stopping speech");
+      setIsSpeaking(false);
+    }
   };
-
-  // Load available voices and check for Telugu support
-  useEffect(() => {
-    const loadVoices = () => {
-      try {
-        const voices = speechSynthesis.getVoices();
-        setAvailableVoices(voices);
-
-        // Check if Telugu voice is available
-        const hasTeluguVoice = voices.some(
-          (voice) =>
-            voice.lang.startsWith("te") ||
-            voice.lang.includes("telugu") ||
-            voice.name.toLowerCase().includes("telugu"),
-        );
-        setTeluguVoiceAvailable(hasTeluguVoice);
-
-        console.log("Speech synthesis status:", {
-          voicesLoaded: voices.length > 0,
-          totalVoices: voices.length,
-          teluguAvailable: hasTeluguVoice,
-          synthesisPending: speechSynthesis.pending,
-          synthesisSpeaking: speechSynthesis.speaking,
-          available: "speechSynthesis" in window,
-        });
-
-        if (voices.length === 0) {
-          console.warn("No voices loaded yet, will retry...");
-          setTimeout(loadVoices, 1000);
-        }
-      } catch (error) {
-        console.error("Error loading voices:", {
-          message: String(error?.message || "Unknown error"),
-          name: String(error?.name || "Unknown"),
-        });
-      }
-    };
-
-    // Load voices immediately and also on voiceschanged event
-    loadVoices();
-    speechSynthesis.addEventListener("voiceschanged", loadVoices);
-
-    return () => {
-      speechSynthesis.removeEventListener("voiceschanged", loadVoices);
-    };
-  }, []);
 
   // Welcome message
   useEffect(() => {
     const timer = setTimeout(() => {
       speak(
         "Language Translator loaded. Enter text to translate and hear it spoken in the selected language.",
-        "en-US",
       );
-    }, 500);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Mock translation function (in a real app, you'd use a translation service)
+  // Enhanced mock translation with basic word/phrase mapping
   const translateText = async () => {
     if (!inputText.trim()) {
-      speak("Please enter some text to translate.", "en-US");
+      speak("Please enter some text to translate.");
       return;
     }
 
     setIsTranslating(true);
-    speak("Translating text...", "en-US");
+    speak("Translating text...");
 
-    // Simulate API call delay
     setTimeout(() => {
-      // Enhanced mock translation with basic word/phrase mapping
       const getTranslation = (text: string, language: string): string => {
         const lowerText = text.toLowerCase().trim();
 
@@ -399,7 +155,7 @@ export default function Translator() {
             hi: "హాయ్",
             "good morning": "శుభోదయం",
             "good evening": "శుభ సాయంత్రం",
-            "good night": "శ���భ రాత్రి",
+            "good night": "శుభ రాత్రి",
             "how are you": "ఎలా ఉన్నారు",
             "thank you": "ధన్యవాదాలు",
             please: "దయచేసి",
@@ -409,7 +165,7 @@ export default function Translator() {
             water: "నీరు",
             food: "ఆహారం",
             help: "సహాయం",
-            "i need help": "న���కు సహాయం కావాలి",
+            "i need help": "నాకు సహాయం కావాలి",
             "where is": "ఎక్కడ ఉంది",
             bathroom: "బాత్రూమ్",
             hospital: "ఆసుపత్రి",
@@ -418,13 +174,13 @@ export default function Translator() {
             family: "కుటుంబం",
             friend: "స్నేహితుడు",
             love: "ప్రేమ",
-            happy: "స��తోషం",
+            happy: "సంతోషం",
             sad: "దుఃఖం",
             beautiful: "అందమైన",
             good: "మంచి",
-            bad: "చ��డు",
+            bad: "చెడు",
             big: "పెద్ద",
-            small: "చి���్న",
+            small: "చిన్న",
           };
 
           // Check for exact matches first
@@ -484,9 +240,9 @@ export default function Translator() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      speak("Text copied to clipboard.", "en-US");
+      speak("Text copied to clipboard.");
     } catch (err) {
-      speak("Failed to copy text.", "en-US");
+      speak("Failed to copy text.");
     }
   };
 
@@ -494,7 +250,7 @@ export default function Translator() {
     setInputText("");
     setTranslatedText("");
     stopSpeaking();
-    speak("Text cleared.", "en-US");
+    speak("Text cleared.");
   };
 
   const selectedLang = languages.find((lang) => lang.code === selectedLanguage);
@@ -575,7 +331,7 @@ export default function Translator() {
                 onValueChange={(value) => {
                   setSelectedLanguage(value);
                   const lang = languages.find((l) => l.code === value);
-                  speak(`Language changed to ${lang?.name}`, "en-US");
+                  speak(`Language changed to ${lang?.name}`);
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -598,25 +354,6 @@ export default function Translator() {
                   <p className="text-sm text-muted-foreground">
                     Selected: {selectedLang.flag} {selectedLang.name}
                   </p>
-                  {selectedLanguage === "te-IN" && (
-                    <div className="mt-2">
-                      {teluguVoiceAvailable ? (
-                        <Badge
-                          variant="default"
-                          className="text-xs bg-green-100 text-green-800"
-                        >
-                          ✓ Telugu voice available
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="secondary"
-                          className="text-xs bg-orange-100 text-orange-800"
-                        >
-                          ⚠ Telugu voice not detected - using fallback
-                        </Badge>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
@@ -637,12 +374,12 @@ export default function Translator() {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   className="min-h-[200px] text-base"
-                  onFocus={() => speak("Input text area focused.", "en-US")}
+                  onFocus={() => speak("Input text area focused.")}
                 />
 
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    onClick={() => speak(inputText, "en-US")}
+                    onClick={() => speak(inputText)}
                     disabled={!inputText.trim() || isSpeaking}
                     variant="outline"
                     size="sm"
@@ -696,22 +433,7 @@ export default function Translator() {
 
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    onClick={() => {
-                      if (
-                        selectedLanguage === "te-IN" &&
-                        !teluguVoiceAvailable
-                      ) {
-                        speak(
-                          `Reading Telugu text in available voice: ${translatedText}`,
-                          "en-US",
-                        );
-                        setTimeout(() => {
-                          speak(translatedText, selectedLanguage);
-                        }, 2000);
-                      } else {
-                        speak(translatedText, selectedLanguage);
-                      }
-                    }}
+                    onClick={() => speak(translatedText, selectedLanguage)}
                     disabled={!translatedText || isSpeaking}
                     variant="outline"
                     size="sm"
@@ -780,7 +502,7 @@ export default function Translator() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   "Hello, how are you?",
-                  "నమస్క��రం, ఎలా ఉన్నార��?",
+                  "నమస్కారం, ఎలా ఉన్నారు?",
                   "Where is the bathroom?",
                   "I need help, please.",
                   "Thank you very much.",
@@ -795,12 +517,12 @@ export default function Translator() {
                       setInputText(example);
                       const isTeluguText = /[\u0C00-\u0C7F]/.test(example);
                       if (isTeluguText) {
-                        speak(`Telugu example selected`, "en-US");
+                        speak("Telugu example selected");
                         setTimeout(() => {
                           speak(example, "te-IN");
                         }, 1500);
                       } else {
-                        speak(`Example selected: ${example}`, "en-US");
+                        speak(`Example selected: ${example}`);
                       }
                     }}
                   >
@@ -818,9 +540,9 @@ export default function Translator() {
                 <div className="flex gap-2">
                   <Button
                     onClick={() => {
-                      speak("Testing Telugu voice synthesis", "en-US");
+                      speak("Testing Telugu voice synthesis");
                       setTimeout(() => {
-                        speak("నమస్కారం! ఇది తెలుగు వాయి���్ టెస్ట్.", "te-IN");
+                        speak("నమస్కారం! ఇది తెలుగు వాయిస్ టెస్ట్.", "te-IN");
                       }, 2000);
                     }}
                     disabled={isSpeaking}
@@ -844,12 +566,10 @@ export default function Translator() {
                       if (teluguVoices.length > 0) {
                         speak(
                           `Found ${teluguVoices.length} Telugu voices: ${teluguVoices.map((v) => v.name).join(", ")}`,
-                          "en-US",
                         );
                       } else {
                         speak(
                           "No Telugu voices found on this device. The system will use a fallback voice for Telugu text.",
-                          "en-US",
                         );
                       }
                     }}
