@@ -29,6 +29,8 @@ import {
 
 const languages = [
   { code: "en-US", name: "English (US)", flag: "🇺🇸" },
+  { code: "te-IN", name: "Telugu (తెలుగు)", flag: "🇮🇳" },
+  { code: "hi-IN", name: "Hindi", flag: "🇮🇳" },
   { code: "es-ES", name: "Spanish", flag: "🇪🇸" },
   { code: "fr-FR", name: "French", flag: "🇫🇷" },
   { code: "de-DE", name: "German", flag: "🇩🇪" },
@@ -38,7 +40,6 @@ const languages = [
   { code: "ja-JP", name: "Japanese", flag: "🇯🇵" },
   { code: "ko-KR", name: "Korean", flag: "🇰🇷" },
   { code: "zh-CN", name: "Chinese (Simplified)", flag: "🇨🇳" },
-  { code: "hi-IN", name: "Hindi", flag: "🇮🇳" },
   { code: "ar-SA", name: "Arabic", flag: "🇸🇦" },
 ];
 
@@ -98,6 +99,8 @@ export default function Translator() {
     setTimeout(() => {
       // This is a mock translation - in a real app, integrate with Google Translate API, DeepL, etc.
       const mockTranslations: { [key: string]: string } = {
+        "te-IN": "నమస్కారం! ఇది ఒక పరీక్ష అనువాదం.",
+        "hi-IN": "नमस्ते! यह एक परीक्षण अनुवाद है।",
         "es-ES": "¡Hola! Esta es una traducción de prueba.",
         "fr-FR": "Bonjour! Ceci est une traduction de test.",
         "de-DE": "Hallo! Dies ist eine Testübersetzung.",
@@ -107,7 +110,6 @@ export default function Translator() {
         "ja-JP": "こんにちは！これはテスト翻訳です。",
         "ko-KR": "안녕하세요! 이것은 테스트 번역입니다.",
         "zh-CN": "你好！这是一个测试翻译。",
-        "hi-IN": "नमस्ते! यह एक परीक्षण अनुवाद है।",
         "ar-SA": "مرحبا! هذه ترجمة تجريبية.",
       };
 
@@ -388,6 +390,7 @@ export default function Translator() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
                   "Hello, how are you?",
+                  "నమస్క��రం, ఎలా ఉన్నారు?",
                   "Where is the bathroom?",
                   "I need help, please.",
                   "Thank you very much.",
