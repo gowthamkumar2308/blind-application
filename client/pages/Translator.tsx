@@ -87,7 +87,30 @@ export default function Translator() {
 
       waitForVoices();
     } catch (error) {
-      console.error("Error in speech synthesis setup:", error);
+      console.log("Error in speech synthesis setup, using backup");
+      useBackupSpeech(text, languageCode);
+    }
+  };
+
+  const useBackupSpeech = (text: string, languageCode?: string) => {
+    try {
+      console.log("Using backup speech synthesis");
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = languageCode || "en-US";
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => {
+        console.log("Backup speech also failed, giving up");
+        setIsSpeaking(false);
+      };
+
+      speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.log("Backup speech failed completely");
       setIsSpeaking(false);
     }
   };
@@ -359,7 +382,7 @@ export default function Translator() {
             family: "కుటుంబం",
             friend: "స్నేహితుడు",
             love: "ప్రేమ",
-            happy: "సంతోషం",
+            happy: "స��తోషం",
             sad: "దుఃఖం",
             beautiful: "అందమైన",
             good: "మంచి",
