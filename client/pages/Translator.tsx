@@ -269,6 +269,7 @@ export default function Translator() {
           teluguAvailable: hasTeluguVoice,
           synthesisPending: speechSynthesis.pending,
           synthesisSpeaking: speechSynthesis.speaking,
+          available: "speechSynthesis" in window,
         });
 
         if (voices.length === 0) {
@@ -276,7 +277,11 @@ export default function Translator() {
           setTimeout(loadVoices, 1000);
         }
       } catch (error) {
-        console.error("Error loading voices:", error);
+        console.error("Error loading voices:", {
+          error,
+          message: error?.message || "Unknown error",
+          name: error?.name || "Unknown",
+        });
       }
     };
 
@@ -349,7 +354,7 @@ export default function Translator() {
             good: "మంచి",
             bad: "చెడు",
             big: "పెద్ద",
-            small: "చిన్న",
+            small: "చి���్న",
           };
 
           // Check for exact matches first
