@@ -134,6 +134,14 @@ export default function Calculator() {
   }, [display, previousValue, operation, waitingForOperand]);
 
   const inputDigit = (digit: number) => {
+    console.log("inputDigit:", {
+      digit,
+      currentDisplay: display,
+      waitingForOperand,
+      previousValue,
+      operation,
+    });
+
     if (waitingForOperand) {
       setDisplay(String(digit));
       setWaitingForOperand(false);
