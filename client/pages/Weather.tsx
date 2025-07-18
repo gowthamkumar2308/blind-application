@@ -24,6 +24,7 @@ import {
   Eye,
   Gauge,
   RefreshCw,
+  Volume2,
 } from "lucide-react";
 
 interface WeatherData {
