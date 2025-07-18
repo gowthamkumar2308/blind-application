@@ -70,7 +70,7 @@ const mockNewsData: NewsArticle[] = [
     title:
       "హైదరాబాద్‌లో కొత్త మెట్రో లైన్ ప్రారంభం (New Metro Line Opens in Hyderabad)",
     summary:
-      "హైదరాబాద్ మెట్రో రైల్ యొక్క కొత్త లైన్ నేడు ప్రజల సేవకు అందుబాటులోకి వచ్చింది.",
+      "హైదరాబాద్ మెట్ర��� రైల్ యొక్క కొత్త లైన్ నేడు ప్రజల సేవకు అందుబాటులోకి వచ్చింది.",
     content:
       "హైదరాబాద్ మెట్రో రైల్ యొక్క కొత్త లైన్-3 నేడు అధికారికంగా ప్రారంభమైంది. ఈ లైన్ హైటెక్ సిటీ నుండి షంషాబాద్ విమానాశ్రయం వరకు విస్తరించి ఉంది. మొత్తం 32 కిలోమీటర్ల పొడవున్న ఈ లైన్‌లో 24 స్టేషన్లు ఉన్నాయి. రోజుకు 3 లక్షల మంది ప్రయాణికులు ఈ సేవను ఉపయోగించగలరని అంచనా వేయబడింది. ఈ కొత్త లైన్ వల్ల నగర రవాణా వ్యవస్థ మరింత మెరుగుపడుతుందని అధికారులు తెలిపారు.",
     category: "స్థానిక వార్తలు",
@@ -312,7 +312,23 @@ export default function News() {
 
   const readArticleSummary = (article: NewsArticle) => {
     setCurrentlyReading(article.id);
-    const language = article.category === "స్థానిక వార్తలు" ? "te-IN" : "en-US";
+
+    // Detect Telugu content more comprehensively
+    const isTeluguContent =
+      article.category === "స్థానిక వార్తలు" ||
+      /[\u0C00-\u0C7F]/.test(article.title) ||
+      /[\u0C00-\u0C7F]/.test(article.summary) ||
+      article.source.includes("తెలుగు");
+
+    const language = isTeluguContent ? "te-IN" : "en-US";
+
+    console.log("Reading article summary:", {
+      title: article.title.substring(0, 30),
+      isTeluguContent,
+      language,
+      category: article.category,
+    });
+
     speak(
       `${article.title}. Published by ${article.source}. ${article.summary}`,
       language,
@@ -322,7 +338,23 @@ export default function News() {
   const readFullArticle = (article: NewsArticle) => {
     setCurrentlyReading(article.id);
     setSelectedArticle(article);
-    const language = article.category === "స్థానిక వార్తలు" ? "te-IN" : "en-US";
+
+    // Detect Telugu content more comprehensively
+    const isTeluguContent =
+      article.category === "స్థానిక వార్తలు" ||
+      /[\u0C00-\u0C7F]/.test(article.title) ||
+      /[\u0C00-\u0C7F]/.test(article.content) ||
+      article.source.includes("తెలుగు");
+
+    const language = isTeluguContent ? "te-IN" : "en-US";
+
+    console.log("Reading full article:", {
+      title: article.title.substring(0, 30),
+      isTeluguContent,
+      language,
+      category: article.category,
+    });
+
     speak(
       `Reading full article: ${article.title}. ${article.content}`,
       language,
