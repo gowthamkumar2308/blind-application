@@ -55,147 +55,190 @@ export default function Translator() {
   const [teluguVoiceAvailable, setTeluguVoiceAvailable] = useState(false);
 
   const speak = (text: string, languageCode?: string) => {
-    if ("speechSynthesis" in window && text.trim()) {
-      try {
-        speechSynthesis.cancel();
+    // Enhanced safety checks
+    if (!text || !text.trim()) {
+      console.log("Empty text provided to speech synthesis");
+      return;
+    }
 
-        // Wait a moment after cancel to avoid conflicts
-        setTimeout(() => {
-          try {
-            const targetLang = languageCode || selectedLanguage;
-            const utterance = new SpeechSynthesisUtterance(text);
+    if (!("speechSynthesis" in window)) {
+      console.log("Speech synthesis not available in this browser");
+      return;
+    }
 
-            // Find the best voice for the target language
-            const voices = speechSynthesis.getVoices();
-            let selectedVoice = null;
+    // Check if speech synthesis is ready
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      console.log("Speech synthesis busy, canceling previous...");
+      speechSynthesis.cancel();
+    }
 
-            if (targetLang === "te-IN" || targetLang.startsWith("te")) {
-              // Look for Telugu voices
-              selectedVoice = voices.find(
-                (voice) =>
-                  voice.lang.startsWith("te") ||
-                  voice.lang.includes("telugu") ||
-                  voice.name.toLowerCase().includes("telugu"),
-              );
+    try {
+      // Wait for voices to be loaded
+      const waitForVoices = () => {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length === 0) {
+          console.log("No voices available yet, retrying...");
+          setTimeout(waitForVoices, 100);
+          return;
+        }
 
-              if (!selectedVoice) {
-                // Fallback to Hindi if Telugu not available
-                selectedVoice = voices.find((voice) =>
-                  voice.lang.startsWith("hi"),
-                );
+        performSpeech(text, languageCode, voices);
+      };
 
-                if (!selectedVoice) {
-                  // Final fallback to English with a note
-                  selectedVoice = voices.find((voice) =>
-                    voice.lang.startsWith("en"),
-                  );
-                  console.log("Telugu voice not available, using fallback");
-                }
-              }
-            } else {
-              // For other languages, find matching voice
-              selectedVoice = voices.find((voice) =>
-                voice.lang.startsWith(targetLang.split("-")[0]),
-              );
-            }
+      waitForVoices();
+    } catch (error) {
+      console.error("Error in speech synthesis setup:", error);
+      setIsSpeaking(false);
+    }
+  };
 
-            if (selectedVoice) {
-              utterance.voice = selectedVoice;
-              console.log(
-                `Using voice: ${selectedVoice.name} for language: ${targetLang}`,
-              );
-            }
+  const performSpeech = (
+    text: string,
+    languageCode: string | undefined,
+    voices: SpeechSynthesisVoice[],
+  ) => {
+    try {
+      const targetLang = languageCode || selectedLanguage;
+      const utterance = new SpeechSynthesisUtterance(text);
 
-            utterance.lang = targetLang;
-            utterance.rate = targetLang === "te-IN" ? 0.7 : 0.8; // Slower for Telugu
-            utterance.pitch = 1;
-            utterance.volume = 1;
+      // Find the best voice for the target language
+      const voices = speechSynthesis.getVoices();
+      let selectedVoice = null;
 
-            utterance.onstart = () => setIsSpeaking(true);
-            utterance.onend = () => setIsSpeaking(false);
-            utterance.onerror = (error) => {
-              console.error("Speech synthesis error:", {
-                fullError: JSON.stringify(error, null, 2),
-                type: error?.type || "unknown",
-                error: error?.error || "unknown",
-                name: error?.name || "unknown",
-                message: error?.message || "unknown",
-                toString: error?.toString?.() || "no toString",
-                errorEvent: error,
-              });
-              setIsSpeaking(false);
+      if (targetLang === "te-IN" || targetLang.startsWith("te")) {
+        // Look for Telugu voices
+        selectedVoice = voices.find(
+          (voice) =>
+            voice.lang.startsWith("te") ||
+            voice.lang.includes("telugu") ||
+            voice.name.toLowerCase().includes("telugu"),
+        );
 
-              // Handle different error scenarios more safely
-              const errorType =
-                error?.error || error?.type || error?.name || "unknown";
-              console.log("Determined error type:", errorType);
+        if (!selectedVoice) {
+          // Fallback to Hindi if Telugu not available
+          selectedVoice = voices.find((voice) => voice.lang.startsWith("hi"));
 
-              // Don't create recursive calls - check if we're already trying English
-              if (
-                targetLang !== "en-US" &&
-                !text.includes("voice not available")
-              ) {
-                setTimeout(() => {
-                  try {
-                    const fallbackUtterance = new SpeechSynthesisUtterance(
-                      targetLang === "te-IN"
-                        ? `Telugu voice not available. The text was: ${text}`
-                        : `Voice not available for this language. The text was: ${text}`,
-                    );
-                    fallbackUtterance.lang = "en-US";
-                    fallbackUtterance.rate = 0.8;
-                    fallbackUtterance.pitch = 1;
-                    fallbackUtterance.volume = 1;
-
-                    // Find a reliable English voice
-                    const voices = speechSynthesis.getVoices();
-                    const englishVoice = voices.find(
-                      (voice) =>
-                        voice.lang === "en-US" || voice.lang.startsWith("en"),
-                    );
-                    if (englishVoice) {
-                      fallbackUtterance.voice = englishVoice;
-                    }
-
-                    fallbackUtterance.onend = () => setIsSpeaking(false);
-                    fallbackUtterance.onerror = (fallbackError) => {
-                      console.error(
-                        "Fallback speech also failed:",
-                        fallbackError,
-                      );
-                      setIsSpeaking(false);
-                    };
-
-                    speechSynthesis.speak(fallbackUtterance);
-                  } catch (fallbackError) {
-                    console.error(
-                      "Error creating fallback speech:",
-                      fallbackError,
-                    );
-                    setIsSpeaking(false);
-                  }
-                }, 500);
-              }
-            };
-
-            speechSynthesis.speak(utterance);
-          } catch (speakError) {
-            console.error("Error during speech synthesis:", speakError);
-            setIsSpeaking(false);
-
-            // Final fallback - just log the text
-            console.log("Speech failed for text:", text);
+          if (!selectedVoice) {
+            // Final fallback to English with a note
+            selectedVoice = voices.find((voice) => voice.lang.startsWith("en"));
+            console.log("Telugu voice not available, using fallback");
           }
-        }, 100);
-      } catch (cancelError) {
-        console.error("Error canceling previous speech:", cancelError);
+        }
+      } else {
+        // For other languages, find matching voice
+        selectedVoice = voices.find((voice) =>
+          voice.lang.startsWith(targetLang.split("-")[0]),
+        );
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(
+          `Using voice: ${selectedVoice.name} for language: ${targetLang}`,
+        );
+      }
+
+      utterance.lang = targetLang;
+      utterance.rate = targetLang === "te-IN" ? 0.7 : 0.8; // Slower for Telugu
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = (error) => {
+        console.error("Speech synthesis error:", {
+          fullError: JSON.stringify(error, null, 2),
+          type: error?.type || "unknown",
+          error: error?.error || "unknown",
+          name: error?.name || "unknown",
+          message: error?.message || "unknown",
+          toString: error?.toString?.() || "no toString",
+          errorEvent: error,
+        });
+        setIsSpeaking(false);
+
+        // Handle different error scenarios more safely
+        const errorType =
+          error?.error || error?.type || error?.name || "unknown";
+        console.log("Determined error type:", errorType);
+
+        // Don't create recursive calls - check if we're already trying English
+        if (targetLang !== "en-US" && !text.includes("voice not available")) {
+          setTimeout(() => {
+            try {
+              const fallbackUtterance = new SpeechSynthesisUtterance(
+                targetLang === "te-IN"
+                  ? `Telugu voice not available. The text was: ${text}`
+                  : `Voice not available for this language. The text was: ${text}`,
+              );
+              fallbackUtterance.lang = "en-US";
+              fallbackUtterance.rate = 0.8;
+              fallbackUtterance.pitch = 1;
+              fallbackUtterance.volume = 1;
+
+              // Find a reliable English voice
+              const voices = speechSynthesis.getVoices();
+              const englishVoice = voices.find(
+                (voice) =>
+                  voice.lang === "en-US" || voice.lang.startsWith("en"),
+              );
+              if (englishVoice) {
+                fallbackUtterance.voice = englishVoice;
+              }
+
+              fallbackUtterance.onend = () => setIsSpeaking(false);
+              fallbackUtterance.onerror = (fallbackError) => {
+                console.error("Fallback speech also failed:", fallbackError);
+                setIsSpeaking(false);
+              };
+
+              speechSynthesis.speak(fallbackUtterance);
+            } catch (fallbackError) {
+              console.error("Error creating fallback speech:", fallbackError);
+              setIsSpeaking(false);
+            }
+          }, 500);
+        }
+      };
+
+      // Additional check before speaking
+      if (speechSynthesis.speaking || speechSynthesis.pending) {
+        console.log("Still speaking/pending, waiting...");
+        setTimeout(() => performSpeech(text, languageCode, voices), 500);
+        return;
+      }
+
+      console.log("Attempting to speak:", {
+        text: text.substring(0, 50),
+        targetLang,
+        voiceSelected: !!selectedVoice,
+      });
+      speechSynthesis.speak(utterance);
+    } catch (speakError) {
+      console.error("Error during speech synthesis:", {
+        error: speakError,
+        message: speakError?.message || "Unknown error",
+        name: speakError?.name || "Unknown",
+        stack: speakError?.stack || "No stack",
+      });
+      setIsSpeaking(false);
+
+      // Final fallback - try simple English fallback
+      try {
+        const simpleUtterance = new SpeechSynthesisUtterance(
+          `Speech failed for: ${text.substring(0, 30)}`,
+        );
+        simpleUtterance.lang = "en-US";
+        simpleUtterance.onend = () => setIsSpeaking(false);
+        simpleUtterance.onerror = () => {
+          console.log("Even fallback speech failed, giving up");
+          setIsSpeaking(false);
+        };
+        speechSynthesis.speak(simpleUtterance);
+      } catch (fallbackError) {
+        console.error("Fallback speech also failed:", fallbackError);
         setIsSpeaking(false);
       }
-    } else {
-      console.log("Speech synthesis not available or empty text:", {
-        available: "speechSynthesis" in window,
-        hasText: !!text.trim(),
-      });
     }
   };
 
@@ -290,7 +333,7 @@ export default function Translator() {
             no: "లేదు",
             water: "నీరు",
             food: "ఆహారం",
-            help: "సహాయ��",
+            help: "సహాయం",
             "i need help": "నాకు సహాయం కావాలి",
             "where is": "ఎక్కడ ఉంది",
             bathroom: "బాత్రూమ్",
