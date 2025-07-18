@@ -378,7 +378,11 @@ export default function Calculator() {
       className:
         "bg-destructive hover:bg-destructive/90 text-destructive-foreground col-span-2",
     },
-    { label: "⌫", onClick: backspace, className: "bg-muted hover:bg-muted/80" },
+    {
+      label: "⌫",
+      onClick: backspace,
+      className: "bg-muted hover:bg-muted/80 text-muted-foreground border",
+    },
     {
       label: "÷",
       onClick: () => performOperation("/"),
@@ -388,17 +392,20 @@ export default function Calculator() {
     {
       label: "7",
       onClick: () => inputDigit(7),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "8",
       onClick: () => inputDigit(8),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "9",
       onClick: () => inputDigit(9),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "×",
@@ -409,17 +416,20 @@ export default function Calculator() {
     {
       label: "4",
       onClick: () => inputDigit(4),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "5",
       onClick: () => inputDigit(5),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "6",
       onClick: () => inputDigit(6),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "−",
@@ -430,17 +440,20 @@ export default function Calculator() {
     {
       label: "1",
       onClick: () => inputDigit(1),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "2",
       onClick: () => inputDigit(2),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "3",
       onClick: () => inputDigit(3),
-      className: "bg-card hover:bg-muted",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
     },
     {
       label: "+",
@@ -451,9 +464,15 @@ export default function Calculator() {
     {
       label: "0",
       onClick: () => inputDigit(0),
-      className: "bg-card hover:bg-muted col-span-2",
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border col-span-2",
     },
-    { label: ".", onClick: inputDecimal, className: "bg-card hover:bg-muted" },
+    {
+      label: ".",
+      onClick: inputDecimal,
+      className:
+        "bg-secondary hover:bg-secondary/80 text-secondary-foreground border",
+    },
     {
       label: "=",
       onClick: performCalculation,
