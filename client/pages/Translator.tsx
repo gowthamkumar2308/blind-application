@@ -146,31 +146,28 @@ export default function Translator() {
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = (error) => {
-        // Safe error logging without circular references or object conversion issues
-        const safeErrorInfo = {
-          type: String(error?.type || "unknown"),
-          error: String(error?.error || "unknown"),
-          name: String(error?.name || "unknown"),
-          message: String(error?.message || "unknown"),
-          constructor: error?.constructor?.name || "unknown",
-        };
+        // Ultra-safe error handling - completely avoid object conversion
+        console.error("Speech synthesis error occurred");
 
-        console.error("Speech synthesis error:", safeErrorInfo);
-
-        // Log the raw error separately (this might work better in some browsers)
+        // Extract properties one by one safely
         try {
-          console.error("Raw error:", error);
-        } catch (logError) {
-          console.error("Could not log raw error object");
+          if (error) {
+            if (error.type !== undefined)
+              console.log("Error type:", error.type);
+            if (error.error !== undefined)
+              console.log("Error code:", error.error);
+            if (error.message !== undefined)
+              console.log("Error message:", error.message);
+          }
+        } catch (e) {
+          console.log("Could not extract error details safely");
         }
 
         setIsSpeaking(false);
 
-        // Handle different error scenarios more safely
-        const errorType = String(
-          error?.error || error?.type || error?.name || "unknown",
-        );
-        console.log("Determined error type:", errorType);
+        // Simple fallback logic without complex object access
+        let shouldFallback = true; // Default to always try fallback
+        console.log("Will attempt fallback for language:", targetLang);
 
         // Don't create recursive calls - check if we're already trying English
         if (targetLang !== "en-US" && !text.includes("voice not available")) {
