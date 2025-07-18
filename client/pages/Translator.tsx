@@ -192,47 +192,21 @@ export default function Translator() {
         let shouldFallback = true; // Default to always try fallback
         console.log("Will attempt fallback for language:", targetLang);
 
-        // Don't create recursive calls - check if we're already trying English
+        // Use simple backup speech for fallback
         if (targetLang !== "en-US" && !text.includes("voice not available")) {
+          console.log("Attempting backup speech fallback");
           setTimeout(() => {
-            try {
-              const fallbackUtterance = new SpeechSynthesisUtterance(
-                targetLang === "te-IN"
-                  ? `Telugu voice not available. The text was: ${text}`
-                  : `Voice not available for this language. The text was: ${text}`,
-              );
-              fallbackUtterance.lang = "en-US";
-              fallbackUtterance.rate = 0.8;
-              fallbackUtterance.pitch = 1;
-              fallbackUtterance.volume = 1;
-
-              // Find a reliable English voice
-              const voices = speechSynthesis.getVoices();
-              const englishVoice = voices.find(
-                (voice) =>
-                  voice.lang === "en-US" || voice.lang.startsWith("en"),
-              );
-              if (englishVoice) {
-                fallbackUtterance.voice = englishVoice;
-              }
-
-              fallbackUtterance.onend = () => setIsSpeaking(false);
-              fallbackUtterance.onerror = (fallbackError) => {
-                console.error("Fallback speech also failed:", {
-                  type: String(fallbackError?.type || "unknown"),
-                  message: String(fallbackError?.message || "unknown"),
-                });
-                setIsSpeaking(false);
-              };
-
-              speechSynthesis.speak(fallbackUtterance);
-            } catch (fallbackError) {
-              console.error("Error creating fallback speech:", {
-                message: String(fallbackError?.message || "unknown"),
-                name: String(fallbackError?.name || "unknown"),
-              });
-              setIsSpeaking(false);
-            }
+            const fallbackText =
+              targetLang === "te-IN"
+                ? `Telugu voice not available. The text was: ${text.substring(0, 50)}...`
+                : `Voice not available for this language. The text was: ${text.substring(0, 50)}...`;
+            useBackupSpeech(fallbackText, "en-US");
+          }, 500);
+        } else {
+          // Try backup speech with original text
+          console.log("Using backup speech for original text");
+          setTimeout(() => {
+            useBackupSpeech(text, "en-US");
           }, 500);
         }
       };
