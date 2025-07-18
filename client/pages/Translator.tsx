@@ -115,16 +115,20 @@ export default function Translator() {
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = (error) => {
               console.error("Speech synthesis error:", {
-                type: error.type,
-                error: error.error,
-                name: error.name,
-                message: error.message,
+                fullError: JSON.stringify(error, null, 2),
+                type: error?.type || "unknown",
+                error: error?.error || "unknown",
+                name: error?.name || "unknown",
+                message: error?.message || "unknown",
+                toString: error?.toString?.() || "no toString",
+                errorEvent: error,
               });
               setIsSpeaking(false);
 
-              // Handle different error scenarios
-              const errorType = error.error || error.type || "unknown";
-              console.log("Error type:", errorType);
+              // Handle different error scenarios more safely
+              const errorType =
+                error?.error || error?.type || error?.name || "unknown";
+              console.log("Determined error type:", errorType);
 
               // Don't create recursive calls - check if we're already trying English
               if (
@@ -286,7 +290,7 @@ export default function Translator() {
             no: "లేదు",
             water: "నీరు",
             food: "ఆహారం",
-            help: "సహాయం",
+            help: "సహాయ��",
             "i need help": "నాకు సహాయం కావాలి",
             "where is": "ఎక్కడ ఉంది",
             bathroom: "బాత్రూమ్",
