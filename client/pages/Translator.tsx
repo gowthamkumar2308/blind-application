@@ -203,23 +203,34 @@ export default function Translator() {
   // Load available voices and check for Telugu support
   useEffect(() => {
     const loadVoices = () => {
-      const voices = speechSynthesis.getVoices();
-      setAvailableVoices(voices);
+      try {
+        const voices = speechSynthesis.getVoices();
+        setAvailableVoices(voices);
 
-      // Check if Telugu voice is available
-      const hasTeluguVoice = voices.some(
-        (voice) =>
-          voice.lang.startsWith("te") ||
-          voice.lang.includes("telugu") ||
-          voice.name.toLowerCase().includes("telugu"),
-      );
-      setTeluguVoiceAvailable(hasTeluguVoice);
+        // Check if Telugu voice is available
+        const hasTeluguVoice = voices.some(
+          (voice) =>
+            voice.lang.startsWith("te") ||
+            voice.lang.includes("telugu") ||
+            voice.name.toLowerCase().includes("telugu"),
+        );
+        setTeluguVoiceAvailable(hasTeluguVoice);
 
-      console.log(
-        "Available voices:",
-        voices.map((v) => `${v.name} (${v.lang})`),
-      );
-      console.log("Telugu voice available:", hasTeluguVoice);
+        console.log("Speech synthesis status:", {
+          voicesLoaded: voices.length > 0,
+          totalVoices: voices.length,
+          teluguAvailable: hasTeluguVoice,
+          synthesisPending: speechSynthesis.pending,
+          synthesisSpeaking: speechSynthesis.speaking,
+        });
+
+        if (voices.length === 0) {
+          console.warn("No voices loaded yet, will retry...");
+          setTimeout(loadVoices, 1000);
+        }
+      } catch (error) {
+        console.error("Error loading voices:", error);
+      }
     };
 
     // Load voices immediately and also on voiceschanged event
@@ -622,7 +633,7 @@ export default function Translator() {
                     onClick={() => {
                       speak("Testing Telugu voice synthesis", "en-US");
                       setTimeout(() => {
-                        speak("నమస్కారం! ఇది తెలుగు వాయిస్ టెస్ట్.", "te-IN");
+                        speak("నమస్కారం! ఇది తెలుగు వాయి���్ టెస్ట్.", "te-IN");
                       }, 2000);
                     }}
                     disabled={isSpeaking}
