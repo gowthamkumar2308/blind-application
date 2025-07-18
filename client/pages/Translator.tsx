@@ -55,7 +55,7 @@ export default function Translator() {
   const [teluguVoiceAvailable, setTeluguVoiceAvailable] = useState(false);
 
   const speak = (text: string, languageCode?: string) => {
-    // Enhanced safety checks
+    // Ultra-basic safety checks
     if (!text || !text.trim()) {
       console.log("Empty text provided to speech synthesis");
       return;
@@ -66,30 +66,91 @@ export default function Translator() {
       return;
     }
 
-    // Check if speech synthesis is ready
-    if (speechSynthesis.speaking || speechSynthesis.pending) {
-      console.log("Speech synthesis busy, canceling previous...");
-      speechSynthesis.cancel();
+    // Start with the simplest approach first
+    console.log("Starting speech synthesis:", {
+      textLength: text.length,
+      language: languageCode,
+    });
+
+    // Cancel any ongoing speech safely
+    try {
+      if (speechSynthesis.speaking || speechSynthesis.pending) {
+        speechSynthesis.cancel();
+        // Wait a moment after cancel
+        setTimeout(() => attemptSpeech(text, languageCode), 300);
+        return;
+      }
+    } catch (e) {
+      console.log("Error checking speech status, proceeding anyway");
     }
 
-    try {
-      // Wait for voices to be loaded
-      const waitForVoices = () => {
-        const voices = speechSynthesis.getVoices();
-        if (voices.length === 0) {
-          console.log("No voices available yet, retrying...");
-          setTimeout(waitForVoices, 100);
-          return;
-        }
+    attemptSpeech(text, languageCode);
+  };
 
-        performSpeech(text, languageCode, voices);
+  const attemptSpeech = (text: string, languageCode?: string) => {
+    // Try the simplest possible speech synthesis first
+    try {
+      console.log("Attempting simple speech synthesis");
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Set basic properties only
+      utterance.rate = 0.8;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      // Only set language if it's provided and safe
+      if (languageCode && typeof languageCode === "string") {
+        utterance.lang = languageCode;
+      }
+
+      // Minimal event handlers
+      utterance.onstart = () => {
+        console.log("Speech started successfully");
+        setIsSpeaking(true);
       };
 
-      waitForVoices();
-    } catch (error) {
-      console.log("Error in speech synthesis setup, using backup");
-      useBackupSpeech(text, languageCode);
+      utterance.onend = () => {
+        console.log("Speech ended");
+        setIsSpeaking(false);
+      };
+
+      utterance.onerror = () => {
+        console.log("Simple speech failed, trying enhanced approach");
+        setIsSpeaking(false);
+        // Try enhanced approach only if simple fails
+        tryEnhancedSpeech(text, languageCode);
+      };
+
+      console.log("Speaking with simple synthesis");
+      speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.log("Simple speech creation failed, trying enhanced");
+      tryEnhancedSpeech(text, languageCode);
     }
+  };
+
+  const tryEnhancedSpeech = (text: string, languageCode?: string) => {
+    console.log("Trying enhanced speech with voice selection");
+
+    // Get voices with error handling
+    let voices = [];
+    try {
+      voices = speechSynthesis.getVoices();
+      console.log("Available voices:", voices.length);
+    } catch (e) {
+      console.log("Could not get voices, using basic synthesis");
+      useBackupSpeech(text, languageCode);
+      return;
+    }
+
+    if (voices.length === 0) {
+      console.log("No voices available, using backup");
+      useBackupSpeech(text, languageCode);
+      return;
+    }
+
+    // Try to perform enhanced speech with voice selection
+    performSpeech(text, languageCode, voices);
   };
 
   const useBackupSpeech = (text: string, languageCode?: string) => {
@@ -360,7 +421,7 @@ export default function Translator() {
             sad: "దుఃఖం",
             beautiful: "అందమైన",
             good: "మంచి",
-            bad: "చెడు",
+            bad: "చ��డు",
             big: "పెద్ద",
             small: "చి���్న",
           };
