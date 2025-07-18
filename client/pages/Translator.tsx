@@ -186,12 +186,11 @@ export default function Translator() {
       const targetLang = languageCode || selectedLanguage || 'en-US';
       const utterance = new SpeechSynthesisUtterance(text);
 
-      // Safely find the best voice for the target language
+            // Safely find the best voice for the target language
       let selectedVoice = null;
 
       try {
-
-      if (targetLang === "te-IN" || targetLang.startsWith("te")) {
+        if (targetLang === "te-IN" || targetLang.startsWith("te")) {
         // Look for Telugu voices
         selectedVoice = voices.find(
           (voice) =>
@@ -410,7 +409,7 @@ export default function Translator() {
             water: "నీరు",
             food: "ఆహారం",
             help: "సహాయం",
-            "i need help": "నాకు సహాయం కావాలి",
+            "i need help": "న���కు సహాయం కావాలి",
             "where is": "ఎక్కడ ఉంది",
             bathroom: "బాత్రూమ్",
             hospital: "ఆసుపత్రి",
