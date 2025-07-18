@@ -520,12 +520,72 @@ export default function Translator() {
                     className="text-left justify-start h-auto p-3"
                     onClick={() => {
                       setInputText(example);
-                      speak(`Example selected: ${example}`, "en-US");
+                      const isTeluguText = /[\u0C00-\u0C7F]/.test(example);
+                      if (isTeluguText) {
+                        speak(`Telugu example selected`, "en-US");
+                        setTimeout(() => {
+                          speak(example, "te-IN");
+                        }, 1500);
+                      } else {
+                        speak(`Example selected: ${example}`, "en-US");
+                      }
                     }}
                   >
                     "{example}"
                   </Button>
                 ))}
+              </div>
+
+              {/* Telugu Voice Test */}
+              <div className="mt-4 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                <h4 className="font-medium mb-2">Telugu Voice Test</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Test if your device supports Telugu speech synthesis
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      speak("Testing Telugu voice synthesis", "en-US");
+                      setTimeout(() => {
+                        speak("నమస్కారం! ఇది తెలుగు వాయిస్ టెస్ట్.", "te-IN");
+                      }, 2000);
+                    }}
+                    disabled={isSpeaking}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Volume2 className="h-4 w-4 mr-2" />
+                    Test Telugu Voice
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      const voices = speechSynthesis.getVoices();
+                      const teluguVoices = voices.filter(
+                        (voice) =>
+                          voice.lang.startsWith("te") ||
+                          voice.lang.includes("telugu") ||
+                          voice.name.toLowerCase().includes("telugu"),
+                      );
+
+                      if (teluguVoices.length > 0) {
+                        speak(
+                          `Found ${teluguVoices.length} Telugu voices: ${teluguVoices.map((v) => v.name).join(", ")}`,
+                          "en-US",
+                        );
+                      } else {
+                        speak(
+                          "No Telugu voices found on this device. The system will use a fallback voice for Telugu text.",
+                          "en-US",
+                        );
+                      }
+                    }}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    Check Telugu Voices
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
