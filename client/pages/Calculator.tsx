@@ -101,7 +101,7 @@ export default function Calculator() {
       );
       setTimeout(() => {
         speakTelugu(
-          "మాట్లాడే కాలిక్యులేటర�� లోడ్ చేయబడింది. గణనలు చేయడానికి బటన్లు, కీబోర్డ్ లేదా వాయిస్ కమాండ్లను ఉపయోగించండి.",
+          "మాట్లాడే కాలిక్యులేటర్ లోడ్ చేయబడింది. గణనలు చేయడానికి బటన్లు, కీబోర్డ్ లేదా వాయిస్ కమాండ్లను ఉపయోగించండి.",
         );
       }, 3000);
     }, 500);
@@ -232,9 +232,19 @@ export default function Calculator() {
   const performCalculation = () => {
     const inputValue = parseFloat(display);
 
+    console.log("performCalculation:", {
+      display,
+      inputValue,
+      previousValue,
+      operation,
+      waitingForOperand,
+    });
+
     if (previousValue !== null && operation) {
       const newValue = calculate(previousValue, inputValue, operation);
       const calculation = `${previousValue} ${operation} ${inputValue} = ${newValue}`;
+
+      console.log("Final calculation:", calculation);
 
       setDisplay(String(newValue));
       setPreviousValue(null);
@@ -246,6 +256,11 @@ export default function Calculator() {
 
       // Speak the result
       speak(`The result is ${newValue}`);
+    } else {
+      console.log("Cannot perform calculation - missing values:", {
+        previousValue,
+        operation,
+      });
     }
   };
 
