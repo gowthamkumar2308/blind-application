@@ -29,7 +29,7 @@ import {
 
 const languages = [
   { code: "en-US", name: "English (US)", flag: "🇺🇸" },
-  { code: "te-IN", name: "Telugu (తెలుగ���)", flag: "🇮🇳" },
+  { code: "te-IN", name: "Telugu (తెలుగ)", flag: "🇮🇳" },
   { code: "hi-IN", name: "Hindi", flag: "🇮🇳" },
   { code: "es-ES", name: "Spanish", flag: "🇪🇸" },
   { code: "fr-FR", name: "French", flag: "🇫🇷" },
