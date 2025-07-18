@@ -101,7 +101,7 @@ export default function Calculator() {
       );
       setTimeout(() => {
         speakTelugu(
-          "మాట్లాడే కాలిక్యులేటర్ లోడ్ చేయబడింది. గణనలు చేయడానికి బటన్లు, కీబోర్డ్ లేదా వాయిస్ కమాండ్లను ఉపయోగించండి.",
+          "మాట్లాడే కాలిక్యులేటర�� లోడ్ చేయబడింది. గణనలు చేయడానికి బటన్లు, కీబోర్డ్ లేదా వాయిస్ కమాండ్లను ఉపయోగించండి.",
         );
       }, 3000);
     }, 500);
@@ -179,11 +179,27 @@ export default function Calculator() {
       "/": "divided by",
     };
 
+    console.log("performOperation:", {
+      display,
+      inputValue,
+      previousValue,
+      currentOperation: operation,
+      nextOperation,
+      waitingForOperand,
+    });
+
     if (previousValue === null) {
+      // First operand - store it
       setPreviousValue(inputValue);
-    } else if (operation) {
-      const currentValue = previousValue || 0;
-      const newValue = calculate(currentValue, inputValue, operation);
+    } else if (operation && !waitingForOperand) {
+      // There's a pending operation and we have a second operand
+      const newValue = calculate(previousValue, inputValue, operation);
+      console.log("Calculated:", {
+        previousValue,
+        operation,
+        inputValue,
+        result: newValue,
+      });
 
       setDisplay(String(newValue));
       setPreviousValue(newValue);
