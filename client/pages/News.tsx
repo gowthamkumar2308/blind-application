@@ -72,7 +72,7 @@ const mockNewsData: NewsArticle[] = [
     summary:
       "హైదరాబాద్ మెట్ర��� రైల్ యొక్క కొత్త లైన్ నేడు ప్రజల సేవకు అందుబాటులోకి వచ్చింది.",
     content:
-      "హైదరాబాద్ మెట్రో రైల్ యొక్క కొత్త లైన్-3 నేడు అధికారికంగా ప్రారంభమైంది. ఈ లైన్ హైటెక్ సిటీ నుండి షంషాబాద్ విమానాశ్రయం వరకు విస్తరించి ఉంది. మొత్తం 32 కిలోమీటర్ల పొడవున్న ఈ లైన్‌లో 24 స్టేషన్లు ఉన్నాయి. రోజుకు 3 లక్షల మంది ప్రయాణికులు ఈ సేవను ఉపయోగించగలరని అంచనా వేయబడింది. ఈ కొత్త లైన్ వల్ల నగర రవాణా వ్యవస్థ మరింత మెరుగుపడుతుందని అధికారులు తెలిపారు.",
+      "హైదరాబాద్ మెట్రో రైల్ యొక్క కొత్త లైన్-3 నేడు అధికారికంగా ప్రారంభమైంది. ఈ లైన్ హైటెక్ సిటీ నుండి షంషాబాద్ విమానాశ్రయం వరకు విస్తరించి ఉంది. మొత్తం 32 కిలోమీటర్ల పొడవున్న ఈ లైన్‌లో 24 స్టేషన్లు ఉన్నాయి. రోజుకు 3 లక్షల మంది ప్రయా��ికులు ఈ సేవను ఉపయోగించగలరని అంచనా వేయబడింది. ఈ కొత్త లైన్ వల్ల నగర రవాణా వ్యవస్థ మరింత మెరుగుపడుతుందని అధికారులు తెలిపారు.",
     category: "స్థానిక వార్తలు",
     publishedAt: "2024-01-15T06:45:00Z",
     source: "తెలుగు న్యూస్ 24",
@@ -218,19 +218,27 @@ export default function News() {
         setCurrentlyReading(null);
       };
       utterance.onerror = (error) => {
-        // Safe error logging
-        const safeErrorInfo = {
-          type: String(error?.type || "unknown"),
-          error: String(error?.error || "unknown"),
-          message: String(error?.message || "unknown"),
-        };
+        // Ultra-safe error handling for news
+        console.error("News speech synthesis error occurred");
 
-        console.error("News speech synthesis error:", safeErrorInfo);
+        // Extract error info safely
+        try {
+          if (error) {
+            if (error.type !== undefined)
+              console.log("News error type:", error.type);
+            if (error.error !== undefined)
+              console.log("News error code:", error.error);
+          }
+        } catch (e) {
+          console.log("Could not extract news error details");
+        }
+
         setIsSpeaking(false);
         setCurrentlyReading(null);
 
         // Try fallback with English if Telugu fails
         if (targetLang === "te-IN" && !text.includes("voice not available")) {
+          console.log("Attempting Telugu fallback to English");
           setTimeout(() => {
             const fallbackText = `Telugu voice not available. The article was: ${text.substring(0, 100)}...`;
             performSpeech(fallbackText, "en-US", voices);
