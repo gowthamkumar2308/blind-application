@@ -29,7 +29,7 @@ import {
 
 const languages = [
   { code: "en-US", name: "English (US)", flag: "🇺🇸" },
-  { code: "te-IN", name: "Telugu (తెలుగు)", flag: "🇮🇳" },
+  { code: "te-IN", name: "Telugu (తెలుగ���)", flag: "🇮🇳" },
   { code: "hi-IN", name: "Hindi", flag: "🇮🇳" },
   { code: "es-ES", name: "Spanish", flag: "🇪🇸" },
   { code: "fr-FR", name: "French", flag: "🇫🇷" },
@@ -198,13 +198,19 @@ export default function Translator() {
 
               fallbackUtterance.onend = () => setIsSpeaking(false);
               fallbackUtterance.onerror = (fallbackError) => {
-                console.error("Fallback speech also failed:", fallbackError);
+                console.error("Fallback speech also failed:", {
+                  type: String(fallbackError?.type || "unknown"),
+                  message: String(fallbackError?.message || "unknown"),
+                });
                 setIsSpeaking(false);
               };
 
               speechSynthesis.speak(fallbackUtterance);
             } catch (fallbackError) {
-              console.error("Error creating fallback speech:", fallbackError);
+              console.error("Error creating fallback speech:", {
+                message: String(fallbackError?.message || "unknown"),
+                name: String(fallbackError?.name || "unknown"),
+              });
               setIsSpeaking(false);
             }
           }, 500);
