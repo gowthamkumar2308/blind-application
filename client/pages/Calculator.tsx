@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import {
   Pause,
   RotateCcw,
   Backspace,
+  Mic,
+  MicOff,
 } from "lucide-react";
 
 export default function Calculator() {
@@ -25,12 +27,16 @@ export default function Calculator() {
   const [waitingForOperand, setWaitingForOperand] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceCommand, setVoiceCommand] = useState("");
+  const recognitionRef = useRef<any>(null);
 
-  const speak = (text: string) => {
+  const speak = (text: string, lang: string = "en-US") => {
     if ("speechSynthesis" in window) {
       speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
       utterance.rate = 0.8;
       utterance.pitch = 1;
       utterance.volume = 1;
@@ -43,17 +49,61 @@ export default function Calculator() {
     }
   };
 
+  const speakTelugu = (text: string) => {
+    speak(text, "te-IN");
+  };
+
   const stopSpeaking = () => {
     speechSynthesis.cancel();
     setIsSpeaking(false);
   };
 
+  // Initialize speech recognition
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = "en-US";
+
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+        speak(
+          "Listening for calculation... Say numbers and operations like 'five plus three equals'",
+        );
+      };
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        setVoiceCommand(transcript);
+        processVoiceCommand(transcript);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        setIsListening(false);
+        speak("Sorry, I couldn't understand. Please try again.");
+      };
+    }
+  }, []);
+
   // Welcome message
   useEffect(() => {
     const timer = setTimeout(() => {
       speak(
-        "Talking calculator loaded. Use the buttons or keyboard to perform calculations. All results will be spoken aloud.",
+        "Talking calculator loaded. Use the buttons, keyboard, or voice commands to perform calculations. All results will be spoken aloud.",
       );
+      setTimeout(() => {
+        speakTelugu(
+          "మాట్లాడే కాలిక్యులేటర్ లోడ్ చేయబడింది. గణనలు చేయడానికి బటన్లు, కీబోర్డ్ లేదా వాయిస్ కమాండ్లను ఉపయోగించండి.",
+        );
+      }, 3000);
     }, 500);
 
     return () => clearTimeout(timer);
@@ -185,6 +235,101 @@ export default function Calculator() {
 
   const speakCurrentDisplay = () => {
     speak(`Current display shows ${display}`);
+  };
+
+  const startVoiceInput = () => {
+    if (recognitionRef.current && !isListening) {
+      recognitionRef.current.start();
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+  };
+
+  const processVoiceCommand = (command: string) => {
+    speak(`You said: ${command}`);
+
+    // Convert words to numbers and operations
+    let processedCommand = command
+      .replace(/zero/g, "0")
+      .replace(/one/g, "1")
+      .replace(/two/g, "2")
+      .replace(/three/g, "3")
+      .replace(/four/g, "4")
+      .replace(/five/g, "5")
+      .replace(/six/g, "6")
+      .replace(/seven/g, "7")
+      .replace(/eight/g, "8")
+      .replace(/nine/g, "9")
+      .replace(/plus|add/g, "+")
+      .replace(/minus|subtract/g, "-")
+      .replace(/times|multiply|multiplied by/g, "*")
+      .replace(/divide|divided by/g, "/")
+      .replace(/equals|equal/g, "=")
+      .replace(/point|dot/g, ".")
+      .replace(/clear/g, "c")
+      .replace(/delete|backspace/g, "backspace");
+
+    // Handle special commands
+    if (processedCommand.includes("clear") || processedCommand.includes("c")) {
+      clear();
+      return;
+    }
+
+    if (processedCommand.includes("backspace")) {
+      backspace();
+      return;
+    }
+
+    // Process simple calculations like "5 + 3 ="
+    const calcMatch = processedCommand.match(
+      /(\d+(?:\.\d+)?)\s*([+\-*/])\s*(\d+(?:\.\d+)?)\s*=?/,
+    );
+    if (calcMatch) {
+      const [, num1, op, num2] = calcMatch;
+
+      // Clear and input first number
+      clear();
+      num1.split("").forEach((char) => {
+        if (char === ".") {
+          inputDecimal();
+        } else {
+          inputDigit(parseInt(char));
+        }
+      });
+
+      // Perform operation
+      performOperation(op);
+
+      // Input second number
+      num2.split("").forEach((char) => {
+        if (char === ".") {
+          inputDecimal();
+        } else {
+          inputDigit(parseInt(char));
+        }
+      });
+
+      // Calculate result
+      performCalculation();
+      return;
+    }
+
+    // Handle single numbers
+    const numberMatch = processedCommand.match(/^(\d+(?:\.\d+)?)$/);
+    if (numberMatch) {
+      const number = numberMatch[1];
+      setDisplay(number);
+      speak(`Number ${number} entered`);
+      return;
+    }
+
+    speak(
+      "Sorry, I couldn't understand that calculation. Try saying something like 'five plus three equals' or 'twenty divided by four equals'",
+    );
   };
 
   const buttons = [
@@ -350,15 +495,44 @@ export default function Calculator() {
                 </div>
               </div>
 
-              <Button
-                onClick={speakCurrentDisplay}
-                variant="outline"
-                className="w-full"
-                disabled={isSpeaking}
-              >
-                <Volume2 className="h-4 w-4 mr-2" />
-                Speak Current Value
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  onClick={speakCurrentDisplay}
+                  variant="outline"
+                  disabled={isSpeaking}
+                >
+                  <Volume2 className="h-4 w-4 mr-2" />
+                  Speak Value
+                </Button>
+
+                <Button
+                  onClick={isListening ? stopVoiceInput : startVoiceInput}
+                  variant={isListening ? "destructive" : "default"}
+                  disabled={isSpeaking}
+                  className={isListening ? "animate-pulse" : ""}
+                >
+                  {isListening ? (
+                    <>
+                      <MicOff className="h-4 w-4 mr-2" />
+                      Stop
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="h-4 w-4 mr-2" />
+                      Voice
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {voiceCommand && (
+                <div className="p-2 bg-muted rounded text-sm">
+                  <p className="text-xs text-muted-foreground">
+                    Last voice command:
+                  </p>
+                  <p>"{voiceCommand}"</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -398,26 +572,45 @@ export default function Calculator() {
             </CardContent>
           </Card>
 
-          {/* Keyboard Shortcuts */}
+          {/* Input Methods */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">Keyboard Shortcuts</CardTitle>
+              <CardTitle className="text-lg">Input Methods</CardTitle>
               <CardDescription>
-                You can also use your keyboard for calculations
+                Multiple ways to input calculations
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>Numbers: 0-9</div>
-                <div>Decimal: .</div>
-                <div>Add: +</div>
-                <div>Subtract: -</div>
-                <div>Multiply: *</div>
-                <div>Divide: /</div>
-                <div>Equals: Enter or =</div>
-                <div>Clear: Escape or C</div>
-                <div>Backspace: ⌫</div>
-                <div>Speak: Click display</div>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Keyboard Shortcuts</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>Numbers: 0-9</div>
+                    <div>Decimal: .</div>
+                    <div>Add: +</div>
+                    <div>Subtract: -</div>
+                    <div>Multiply: *</div>
+                    <div>Divide: /</div>
+                    <div>Equals: Enter or =</div>
+                    <div>Clear: Escape or C</div>
+                    <div>Backspace: ⌫</div>
+                    <div>Speak: Click display</div>
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="font-medium mb-2">Voice Commands</h4>
+                  <div className="text-sm space-y-1">
+                    <div>• "Five plus three equals"</div>
+                    <div>• "Twenty divided by four equals"</div>
+                    <div>• "Nine times seven equals"</div>
+                    <div>• "Clear" - Clear calculator</div>
+                    <div>• "Backspace" - Delete last digit</div>
+                    <div className="text-muted-foreground mt-2">
+                      Say numbers as words (one, two, three...) or digits
+                    </div>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
