@@ -266,25 +266,90 @@ export default function Translator() {
 
     // Simulate API call delay
     setTimeout(() => {
-      // This is a mock translation - in a real app, integrate with Google Translate API, DeepL, etc.
-      const mockTranslations: { [key: string]: string } = {
-        "te-IN": "నమస్కారం! ఇది ఒక పరీక్ష అనువాదం.",
-        "hi-IN": "नमस्ते! यह एक परीक्षण अनुवाद है।",
-        "es-ES": "¡Hola! Esta es una traducción de prueba.",
-        "fr-FR": "Bonjour! Ceci est une traduction de test.",
-        "de-DE": "Hallo! Dies ist eine Testübersetzung.",
-        "it-IT": "Ciao! Questa è una traduzione di prova.",
-        "pt-PT": "Olá! Esta é uma tradução de teste.",
-        "ru-RU": "Привет! Это тестовый перевод.",
-        "ja-JP": "こんにちは！これはテスト翻訳です。",
-        "ko-KR": "안녕하세요! 이것은 테스트 번역입니다.",
-        "zh-CN": "你好！这是一个测试翻译。",
-        "ar-SA": "مرحبا! هذه ترجمة تجريبية.",
+      // Enhanced mock translation with basic word/phrase mapping
+      const getTranslation = (text: string, language: string): string => {
+        const lowerText = text.toLowerCase().trim();
+
+        // Telugu translations for common phrases
+        if (language === "te-IN") {
+          const teluguTranslations: { [key: string]: string } = {
+            hello: "నమస్కారం",
+            hi: "హాయ్",
+            "good morning": "శుభోదయం",
+            "good evening": "శుభ సాయంత్రం",
+            "good night": "శుభ రాత్రి",
+            "how are you": "ఎలా ఉన్నారు",
+            "thank you": "ధన్యవాదాలు",
+            please: "దయచేసి",
+            sorry: "క్షమించండి",
+            yes: "అవును",
+            no: "లేదు",
+            water: "నీరు",
+            food: "ఆహారం",
+            help: "సహాయం",
+            "i need help": "నాకు సహాయం కావాలి",
+            "where is": "ఎక్కడ ఉంది",
+            bathroom: "బాత్రూమ్",
+            hospital: "ఆసుపత్రి",
+            school: "పాఠశాల",
+            home: "ఇల్లు",
+            family: "కుటుంబం",
+            friend: "స్నేహితుడు",
+            love: "ప్రేమ",
+            happy: "సంతోషం",
+            sad: "దుఃఖం",
+            beautiful: "అందమైన",
+            good: "మంచి",
+            bad: "చెడు",
+            big: "పెద్ద",
+            small: "చిన్న",
+          };
+
+          // Check for exact matches first
+          if (teluguTranslations[lowerText]) {
+            return teluguTranslations[lowerText];
+          }
+
+          // Check for partial matches or phrases
+          for (const [english, telugu] of Object.entries(teluguTranslations)) {
+            if (lowerText.includes(english)) {
+              return text.replace(new RegExp(english, "gi"), telugu);
+            }
+          }
+
+          // If no match found, return with indication it's Telugu text
+          return `[తెలుగు] ${text}`;
+        }
+
+        // Other language fallbacks
+        const basicTranslations: { [key: string]: { [key: string]: string } } =
+          {
+            "hi-IN": {
+              hello: "नमस्ते",
+              "thank you": "धन्यवाद",
+              "good morning": "सुप्रभात",
+            },
+            "es-ES": {
+              hello: "Hola",
+              "thank you": "Gracias",
+              "good morning": "Buenos días",
+            },
+            "fr-FR": {
+              hello: "Bonjour",
+              "thank you": "Merci",
+              "good morning": "Bonjour",
+            },
+          };
+
+        const langTranslations = basicTranslations[language];
+        if (langTranslations && langTranslations[lowerText]) {
+          return langTranslations[lowerText];
+        }
+
+        return `[${language}] ${text}`;
       };
 
-      const translated =
-        mockTranslations[selectedLanguage] ||
-        `[${selectedLanguage}] ${inputText}`;
+      const translated = getTranslation(inputText, selectedLanguage);
       setTranslatedText(translated);
       setIsTranslating(false);
 
