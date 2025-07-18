@@ -57,6 +57,19 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Custom colors for the blind assist app
+        voice: {
+          DEFAULT: "hsl(var(--voice))",
+          foreground: "hsl(var(--voice-foreground))",
+        },
+        assist: {
+          DEFAULT: "hsl(var(--assist))",
+          foreground: "hsl(var(--assist-foreground))",
+        },
+        emergency: {
+          DEFAULT: "hsl(var(--emergency))",
+          foreground: "hsl(var(--emergency-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
