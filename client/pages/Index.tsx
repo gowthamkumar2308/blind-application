@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -78,6 +79,7 @@ export default function Index() {
       description: "Convert text to speech in multiple languages",
       icon: Languages,
       color: "voice",
+      path: "/translator",
       action: () =>
         speak(
           "Language translator activated. Enter text to translate and hear it spoken aloud.",
@@ -90,6 +92,7 @@ export default function Index() {
       description: "Perform calculations with voice feedback",
       icon: Calculator,
       color: "primary",
+      path: "/calculator",
       action: () =>
         speak(
           "Talking calculator activated. Perform calculations and hear the results spoken aloud.",
@@ -102,6 +105,7 @@ export default function Index() {
       description: "Send emergency messages with your location",
       icon: AlertTriangle,
       color: "emergency",
+      path: "/sos",
       action: () =>
         speak(
           "SOS emergency alert system activated. This will send your location to emergency contacts.",
@@ -114,6 +118,7 @@ export default function Index() {
       description: "Get current weather conditions spoken aloud",
       icon: Cloud,
       color: "assist",
+      path: "/weather",
       action: () =>
         speak(
           "Weather reader activated. Getting current weather conditions for your location.",
@@ -126,6 +131,7 @@ export default function Index() {
       description: "Listen to top news headlines",
       icon: Newspaper,
       color: "accent",
+      path: "/news",
       action: () =>
         speak(
           "News reader activated. Loading top news headlines to read aloud.",
@@ -251,9 +257,20 @@ export default function Index() {
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="text-center">
+                <CardContent className="text-center space-y-2">
+                  <Link to={feature.path}>
+                    <Button
+                      className={`w-full bg-${feature.color} hover:bg-${feature.color}/90 text-${feature.color}-foreground`}
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Open Feature
+                    </Button>
+                  </Link>
+
                   <Button
-                    className={`w-full bg-${feature.color} hover:bg-${feature.color}/90 text-${feature.color}-foreground`}
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
                     onClick={(e) => {
                       e.stopPropagation();
                       feature.action();
@@ -261,15 +278,15 @@ export default function Index() {
                   >
                     {isActive ? (
                       <>
-                        <div className="animate-spin h-4 w-4 mr-2">
-                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
+                        <div className="animate-spin h-3 w-3 mr-2">
+                          <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full" />
                         </div>
-                        Active
+                        Speaking...
                       </>
                     ) : (
                       <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Activate
+                        <Volume2 className="h-3 w-3 mr-2" />
+                        Preview
                       </>
                     )}
                   </Button>
