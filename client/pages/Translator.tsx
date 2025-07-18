@@ -106,12 +106,53 @@ export default function Translator() {
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = (error) => {
-        console.error("Speech synthesis error:", error);
+        console.error("Speech synthesis error:", {
+          type: error.type,
+          error: error.error,
+          name: error.name,
+          message: error.message,
+        });
         setIsSpeaking(false);
-        // Try again with English if Telugu fails
-        if (targetLang === "te-IN") {
+
+        // Handle different error scenarios
+        const errorType = error.error || error.type || "unknown";
+        console.log("Error type:", errorType);
+
+        // Don't create recursive calls - check if we're already trying English
+        if (targetLang !== "en-US" && !text.includes("voice not available")) {
           setTimeout(() => {
-            speak(`Telugu voice not available. The text was: ${text}`, "en-US");
+            try {
+              const fallbackUtterance = new SpeechSynthesisUtterance(
+                targetLang === "te-IN"
+                  ? `Telugu voice not available. The text was: ${text}`
+                  : `Voice not available for this language. The text was: ${text}`,
+              );
+              fallbackUtterance.lang = "en-US";
+              fallbackUtterance.rate = 0.8;
+              fallbackUtterance.pitch = 1;
+              fallbackUtterance.volume = 1;
+
+              // Find a reliable English voice
+              const voices = speechSynthesis.getVoices();
+              const englishVoice = voices.find(
+                (voice) =>
+                  voice.lang === "en-US" || voice.lang.startsWith("en"),
+              );
+              if (englishVoice) {
+                fallbackUtterance.voice = englishVoice;
+              }
+
+              fallbackUtterance.onend = () => setIsSpeaking(false);
+              fallbackUtterance.onerror = (fallbackError) => {
+                console.error("Fallback speech also failed:", fallbackError);
+                setIsSpeaking(false);
+              };
+
+              speechSynthesis.speak(fallbackUtterance);
+            } catch (fallbackError) {
+              console.error("Error creating fallback speech:", fallbackError);
+              setIsSpeaking(false);
+            }
           }, 500);
         }
       };
