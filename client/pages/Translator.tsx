@@ -176,18 +176,20 @@ export default function Translator() {
     }
   };
 
-  const performSpeech = (
+    const performSpeech = (
     text: string,
     languageCode: string | undefined,
     voices: SpeechSynthesisVoice[],
   ) => {
     try {
-      const targetLang = languageCode || selectedLanguage;
+      console.log('Starting enhanced speech synthesis');
+      const targetLang = languageCode || selectedLanguage || 'en-US';
       const utterance = new SpeechSynthesisUtterance(text);
 
-      // Find the best voice for the target language
-      const voices = speechSynthesis.getVoices();
+      // Safely find the best voice for the target language
       let selectedVoice = null;
+
+      try {
 
       if (targetLang === "te-IN" || targetLang.startsWith("te")) {
         // Look for Telugu voices
