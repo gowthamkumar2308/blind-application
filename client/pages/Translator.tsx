@@ -49,20 +49,72 @@ export default function Translator() {
   const [selectedLanguage, setSelectedLanguage] = useState("en-US");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState<
+    SpeechSynthesisVoice[]
+  >([]);
+  const [teluguVoiceAvailable, setTeluguVoiceAvailable] = useState(false);
 
   const speak = (text: string, languageCode?: string) => {
     if ("speechSynthesis" in window && text.trim()) {
       speechSynthesis.cancel();
 
+      const targetLang = languageCode || selectedLanguage;
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = languageCode || selectedLanguage;
-      utterance.rate = 0.8;
+
+      // Find the best voice for the target language
+      const voices = speechSynthesis.getVoices();
+      let selectedVoice = null;
+
+      if (targetLang === "te-IN" || targetLang.startsWith("te")) {
+        // Look for Telugu voices
+        selectedVoice = voices.find(
+          (voice) =>
+            voice.lang.startsWith("te") ||
+            voice.lang.includes("telugu") ||
+            voice.name.toLowerCase().includes("telugu"),
+        );
+
+        if (!selectedVoice) {
+          // Fallback to Hindi if Telugu not available
+          selectedVoice = voices.find((voice) => voice.lang.startsWith("hi"));
+
+          if (!selectedVoice) {
+            // Final fallback to English with a note
+            selectedVoice = voices.find((voice) => voice.lang.startsWith("en"));
+            console.log("Telugu voice not available, using fallback");
+          }
+        }
+      } else {
+        // For other languages, find matching voice
+        selectedVoice = voices.find((voice) =>
+          voice.lang.startsWith(targetLang.split("-")[0]),
+        );
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(
+          `Using voice: ${selectedVoice.name} for language: ${targetLang}`,
+        );
+      }
+
+      utterance.lang = targetLang;
+      utterance.rate = targetLang === "te-IN" ? 0.7 : 0.8; // Slower for Telugu
       utterance.pitch = 1;
       utterance.volume = 1;
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onerror = (error) => {
+        console.error("Speech synthesis error:", error);
+        setIsSpeaking(false);
+        // Try again with English if Telugu fails
+        if (targetLang === "te-IN") {
+          setTimeout(() => {
+            speak(`Telugu voice not available. The text was: ${text}`, "en-US");
+          }, 500);
+        }
+      };
 
       speechSynthesis.speak(utterance);
     }
@@ -72,6 +124,37 @@ export default function Translator() {
     speechSynthesis.cancel();
     setIsSpeaking(false);
   };
+
+  // Load available voices and check for Telugu support
+  useEffect(() => {
+    const loadVoices = () => {
+      const voices = speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+
+      // Check if Telugu voice is available
+      const hasTeluguVoice = voices.some(
+        (voice) =>
+          voice.lang.startsWith("te") ||
+          voice.lang.includes("telugu") ||
+          voice.name.toLowerCase().includes("telugu"),
+      );
+      setTeluguVoiceAvailable(hasTeluguVoice);
+
+      console.log(
+        "Available voices:",
+        voices.map((v) => `${v.name} (${v.lang})`),
+      );
+      console.log("Telugu voice available:", hasTeluguVoice);
+    };
+
+    // Load voices immediately and also on voiceschanged event
+    loadVoices();
+    speechSynthesis.addEventListener("voiceschanged", loadVoices);
+
+    return () => {
+      speechSynthesis.removeEventListener("voiceschanged", loadVoices);
+    };
+  }, []);
 
   // Welcome message
   useEffect(() => {
@@ -242,6 +325,25 @@ export default function Translator() {
                   <p className="text-sm text-muted-foreground">
                     Selected: {selectedLang.flag} {selectedLang.name}
                   </p>
+                  {selectedLanguage === "te-IN" && (
+                    <div className="mt-2">
+                      {teluguVoiceAvailable ? (
+                        <Badge
+                          variant="default"
+                          className="text-xs bg-green-100 text-green-800"
+                        >
+                          ✓ Telugu voice available
+                        </Badge>
+                      ) : (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-orange-100 text-orange-800"
+                        >
+                          ⚠ Telugu voice not detected - using fallback
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -321,7 +423,22 @@ export default function Translator() {
 
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    onClick={() => speak(translatedText, selectedLanguage)}
+                    onClick={() => {
+                      if (
+                        selectedLanguage === "te-IN" &&
+                        !teluguVoiceAvailable
+                      ) {
+                        speak(
+                          `Reading Telugu text in available voice: ${translatedText}`,
+                          "en-US",
+                        );
+                        setTimeout(() => {
+                          speak(translatedText, selectedLanguage);
+                        }, 2000);
+                      } else {
+                        speak(translatedText, selectedLanguage);
+                      }
+                    }}
                     disabled={!translatedText || isSpeaking}
                     variant="outline"
                     size="sm"
