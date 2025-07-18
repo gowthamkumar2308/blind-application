@@ -293,9 +293,8 @@ export default function Translator() {
         }
       } catch (error) {
         console.error("Error loading voices:", {
-          error,
-          message: error?.message || "Unknown error",
-          name: error?.name || "Unknown",
+          message: String(error?.message || "Unknown error"),
+          name: String(error?.name || "Unknown"),
         });
       }
     };
