@@ -126,12 +126,89 @@ export default function News() {
   const [isLoadingNews, setIsLoadingNews] = useState(false);
 
   const speak = (text: string, lang: string = "en-US") => {
-    if ("speechSynthesis" in window) {
-      speechSynthesis.cancel();
+    // Enhanced safety checks
+    if (!text || !text.trim()) {
+      console.log("Empty text provided to speech synthesis");
+      return;
+    }
 
+    if (!("speechSynthesis" in window)) {
+      console.log("Speech synthesis not available in this browser");
+      return;
+    }
+
+    // Check if speech synthesis is ready
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      console.log("Speech synthesis busy, canceling previous...");
+      speechSynthesis.cancel();
+    }
+
+    try {
+      // Wait for voices to be loaded
+      const waitForVoices = () => {
+        const voices = speechSynthesis.getVoices();
+        if (voices.length === 0) {
+          console.log("No voices available yet, retrying...");
+          setTimeout(waitForVoices, 100);
+          return;
+        }
+
+        performSpeech(text, lang, voices);
+      };
+
+      waitForVoices();
+    } catch (error) {
+      console.error("Error in speech synthesis setup:", error);
+      setIsSpeaking(false);
+    }
+  };
+
+  const performSpeech = (
+    text: string,
+    targetLang: string,
+    voices: SpeechSynthesisVoice[],
+  ) => {
+    try {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = 0.8;
+
+      // Find the best voice for the target language
+      let selectedVoice = null;
+
+      if (targetLang === "te-IN" || targetLang.startsWith("te")) {
+        // Look for Telugu voices
+        selectedVoice = voices.find(
+          (voice) =>
+            voice.lang.startsWith("te") ||
+            voice.lang.includes("telugu") ||
+            voice.name.toLowerCase().includes("telugu"),
+        );
+
+        if (!selectedVoice) {
+          // Fallback to Hindi if Telugu not available
+          selectedVoice = voices.find((voice) => voice.lang.startsWith("hi"));
+
+          if (!selectedVoice) {
+            // Final fallback to English
+            selectedVoice = voices.find((voice) => voice.lang.startsWith("en"));
+            console.log("Telugu voice not available, using fallback");
+          }
+        }
+      } else {
+        // For other languages, find matching voice
+        selectedVoice = voices.find((voice) =>
+          voice.lang.startsWith(targetLang.split("-")[0]),
+        );
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        console.log(
+          `Using voice: ${selectedVoice.name} for language: ${targetLang}`,
+        );
+      }
+
+      utterance.lang = targetLang;
+      utterance.rate = targetLang === "te-IN" ? 0.7 : 0.8; // Slower for Telugu
       utterance.pitch = 1;
       utterance.volume = 1;
 
@@ -140,12 +217,47 @@ export default function News() {
         setIsSpeaking(false);
         setCurrentlyReading(null);
       };
-      utterance.onerror = () => {
+      utterance.onerror = (error) => {
+        // Safe error logging
+        const safeErrorInfo = {
+          type: String(error?.type || "unknown"),
+          error: String(error?.error || "unknown"),
+          message: String(error?.message || "unknown"),
+        };
+
+        console.error("News speech synthesis error:", safeErrorInfo);
         setIsSpeaking(false);
         setCurrentlyReading(null);
+
+        // Try fallback with English if Telugu fails
+        if (targetLang === "te-IN" && !text.includes("voice not available")) {
+          setTimeout(() => {
+            const fallbackText = `Telugu voice not available. The article was: ${text.substring(0, 100)}...`;
+            performSpeech(fallbackText, "en-US", voices);
+          }, 500);
+        }
       };
 
+      // Additional check before speaking
+      if (speechSynthesis.speaking || speechSynthesis.pending) {
+        console.log("Still speaking/pending, waiting...");
+        setTimeout(() => performSpeech(text, targetLang, voices), 500);
+        return;
+      }
+
+      console.log("News: Attempting to speak:", {
+        text: text.substring(0, 50),
+        targetLang,
+        voiceSelected: !!selectedVoice,
+      });
       speechSynthesis.speak(utterance);
+    } catch (speakError) {
+      console.error("Error during news speech synthesis:", {
+        message: String(speakError?.message || "Unknown error"),
+        name: String(speakError?.name || "Unknown"),
+      });
+      setIsSpeaking(false);
+      setCurrentlyReading(null);
     }
   };
 
